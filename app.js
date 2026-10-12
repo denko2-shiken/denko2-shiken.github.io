@@ -31,16 +31,23 @@ if (ANALYTICS_WEB) {
 }
 
 function countScreen(name) {
-  const title = SCREEN_TITLES[name];
+  countEvent(SCREEN_TITLES[name]);
+}
+
+function countEvent(title) {
   if (!ANALYTICS_WEB || !ANALYTICS_SITE.goatcounter || !title ||
       !window.goatcounter || typeof window.goatcounter.count !== "function") return;
-  // 画面名だけをイベントとして送る（問題のid・回答・成績は送らない）。
+  // 画面名・リンク名だけをイベントとして送る（問題のid・回答・成績は送らない）。
   try {
     window.goatcounter.count({ path: "/" + title, title: title, event: true });
   } catch (e) {
     // 計測に失敗しても、練習はそのまま続けられる。
   }
 }
+
+document.querySelectorAll("[data-video]").forEach(link => {
+  link.addEventListener("click", () => countEvent("動画リンク（" + link.dataset.video + "）"));
+});
 
 // ---------- 鑑別写真の開発希望（成績とは別に保存） ----------
 const VOTE_KEY = "denko2-vote-v1";
