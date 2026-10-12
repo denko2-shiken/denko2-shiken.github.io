@@ -1,0 +1,660 @@
+/* 色はここでまとめて管理（ダークモードは下で上書き）
+   方針：絶縁テープの色＋太い線＋ぼかさない影。目立たせるのはタイトルの黄色い札だけ。 */
+:root {
+  --bg: #EEF1F5;
+  --surface: #FFFFFF;
+  --ink: #15191F;
+  --muted: #5A6372;
+  --edge: #15191F;          /* 枠線と影の色 */
+  --soft: #D5DBE3;          /* 目盛りの未回答部分など */
+  --yellow: #FFD23F;
+  --on-yellow: #15191F;
+  --main: #15191F;          /* 主ボタン */
+  --on-main: #FFFFFF;
+  --ok: #1E9E5A;
+  --ok-bg: #DDF5E7;
+  --ng: #E2453C;
+  --ng-bg: #FDE3E0;
+  --genba-bg: #FFF4C7;
+
+  /* 分野ごとの色（絶縁テープ） */
+  --t-keisan: #2F6FE0;
+  --t-hourei: #E2453C;
+  --t-kizai: #FFC21A;
+  --t-sekou: #1E9E5A;
+  --t-haisen: #7A4FD0;
+
+  --radius: 14px;
+  --shadow: 4px 4px 0 var(--edge);
+  --font: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "BIZ UDPGothic", "Noto Sans JP", "Yu Gothic", "Meiryo", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151B;
+    --surface: #1D222B;
+    --ink: #F1F3F7;
+    --muted: #A3ACBA;
+    --edge: #000000;
+    --soft: #343B47;
+    --main: #FFD23F;
+    --on-main: #15191F;
+    --ok: #4CCB85;
+    --ok-bg: #173526;
+    --ng: #FF7A70;
+    --ng-bg: #3D1E1C;
+    --genba-bg: #2E2A16;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.app {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+  min-height: 100vh;
+}
+
+[hidden] { display: none !important; }
+
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+
+:focus-visible {
+  outline: 3px solid var(--t-keisan);
+  outline-offset: 3px;
+}
+
+/* 押せるもの共通：太枠＋ぼかさない影。押すと影の分だけ沈む */
+.btn,
+.choice,
+.chip {
+  border: 2.5px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.btn:active:not(:disabled),
+.choice:active:not(:disabled),
+.chip:active:not(:disabled) {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--edge);
+}
+
+/* ---------- ホーム ---------- */
+.home-head {
+  margin: 20px 0 28px;
+  padding: 18px 20px 20px;
+  background: var(--yellow);
+  color: var(--on-yellow);
+  border: 3px solid var(--edge);
+  border-radius: 18px;
+  box-shadow: 6px 6px 0 var(--edge);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 札の下端に4色のテープ（4つの分野） */
+.home-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10px;
+  background: linear-gradient(90deg,
+    var(--t-keisan) 0 25%, var(--t-hourei) 25% 50%,
+    #FFFFFF 50% 75%, var(--t-sekou) 75% 100%);
+  border-top: 2.5px solid var(--edge);
+}
+
+.maker {
+  margin: 0 0 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 42px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 4px 0;
+}
+
+.stat-num {
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label { font-size: 14px; color: var(--muted); font-weight: 600; }
+
+.menu { display: grid; gap: 14px; }
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 62px;
+  padding: 12px 16px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.btn-main {
+  background: var(--main);
+  color: var(--on-main);
+}
+
+.btn:disabled {
+  background: var(--surface);
+  color: var(--muted);
+  border-color: var(--soft);
+  box-shadow: none;
+  cursor: default;
+}
+
+.badge {
+  min-width: 28px;
+  padding: 0 8px;
+  border-radius: 14px;
+  background: var(--ng);
+  color: #fff;
+  font-size: 15px;
+  line-height: 28px;
+}
+
+.badge.zero { display: none; }
+
+.link-btn {
+  display: block;
+  margin: 32px auto 0;
+  padding: 8px 12px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+/* ---------- 共通の上部バー ---------- */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+}
+
+.back {
+  background: none;
+  border: 0;
+  padding: 8px 4px;
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.count {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.screen-title { margin: 8px 0 18px; font-size: 28px; font-weight: 900; }
+
+/* ---------- 分野の色 ---------- */
+[data-bunya="計算"] { --tape: var(--t-keisan); }
+[data-bunya="法令"] { --tape: var(--t-hourei); }
+[data-bunya="器具・材料"] { --tape: var(--t-kizai); }
+[data-bunya="施工方法"] { --tape: var(--t-sekou); }
+[data-bunya="配線図"] { --tape: var(--t-haisen); }
+
+/* ---------- 問題画面 ---------- */
+/* 進み具合：分電盤のブレーカーが並んでいるような目盛り */
+.meter {
+  display: flex;
+  gap: 5px;
+  margin: 4px 0 20px;
+  padding: 0;
+  list-style: none;
+}
+
+.meter li {
+  flex: 1;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--soft);
+}
+
+.meter li.now { background: var(--ink); }
+.meter li.ok { background: var(--ok); }
+.meter li.ng { background: var(--ng); }
+
+.tag {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 2px 12px;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: var(--tape);
+  color: #FFFFFF;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.tag[data-bunya="器具・材料"] { color: #15191F; }
+
+.question {
+  margin: 0 0 22px;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.choices { display: grid; gap: 12px; }
+
+.choice {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 62px;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.choice .mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2.5px solid var(--edge);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.choice:disabled { cursor: default; }
+.choice.dim { opacity: 0.45; box-shadow: none; }
+
+.choice.ok { background: var(--ok-bg); }
+.choice.ok .mark { background: var(--ok); color: #fff; }
+
+.choice.ng { background: var(--ng-bg); }
+.choice.ng .mark { background: var(--ng); color: #fff; }
+
+.answer { margin-top: 24px; display: grid; gap: 14px; }
+
+.verdict {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.verdict.ok { color: var(--ok); }
+.verdict.ng { color: var(--ng); }
+
+.note {
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 2px solid var(--soft);
+}
+
+.note h3 { margin: 0 0 4px; font-size: 15px; font-weight: 800; }
+.note p { margin: 0; font-size: 17px; }
+
+.note-genba {
+  background: var(--genba-bg);
+  border-color: var(--edge);
+}
+
+.kakunin { color: var(--ng); font-weight: 800; }
+
+/* ---------- 結果画面 ---------- */
+.result-rate {
+  margin: 0;
+  font-size: 80px;
+  font-weight: 900;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-rate small { font-size: 34px; margin-left: 4px; }
+.result-sub { margin: 6px 0 14px; color: var(--muted); font-weight: 700; }
+.meter-result { margin-bottom: 22px; }
+
+.result-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 26px;
+  background: var(--surface);
+  border: 2.5px solid var(--edge);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.result-table th,
+.result-table td {
+  padding: 12px 16px;
+  border-bottom: 2px solid var(--soft);
+  text-align: left;
+}
+
+.result-table th { font-size: 14px; color: var(--muted); font-weight: 800; }
+.result-table td:last-child,
+.result-table th:last-child { text-align: right; font-weight: 900; font-variant-numeric: tabular-nums; }
+.result-table tr:last-child td { border-bottom: 0; }
+
+.result-table .tag { margin: 0; }
+
+/* 答えた瞬間だけ、解説を少し動かして目を向けさせる */
+.answer { animation: show 0.2s ease-out; }
+
+@keyframes show {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer { animation: none; }
+  .btn, .choice, .chip { transition: none; }
+}
+
+/* ---------- おすすめ欄（広告）：問題の邪魔をしないよう、結果画面の一番下に控えめに ---------- */
+.osusume {
+  margin-top: 36px;
+  padding-top: 18px;
+  border-top: 2px dashed var(--soft);
+}
+
+.osusume-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.pr {
+  padding: 0 6px;
+  border: 1.5px solid var(--muted);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.osusume-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+
+.osusume-list a {
+  display: block;
+  padding: 12px 14px;
+  border: 2px solid var(--soft);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.o-name { display: block; font-weight: 800; }
+.o-note { display: block; font-size: 14px; color: var(--muted); }
+
+/* ---------- 問題の状態（未回答・苦手・うろ覚え・完璧） ---------- */
+[data-jotai="未回答"] { --jc: var(--soft); }
+[data-jotai="苦手"] { --jc: var(--ng); }
+[data-jotai="うろ覚え"] { --jc: var(--yellow); }
+[data-jotai="完璧"] { --jc: var(--ok); }
+
+.progress { margin: 32px 0 0; }
+
+.progress-title { margin: 0 0 10px; font-size: 16px; font-weight: 800; }
+
+.progress-list { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+
+/* 1行：分野名・完璧率 ／ 帯 ／ 内訳 */
+.progress-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  row-gap: 4px;
+}
+
+.p-name { font-size: 16px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; }
+
+.p-name[data-bunya]::before {
+  content: "";
+  width: 18px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--tape);
+  border: 1.5px solid var(--edge);
+}
+
+.p-rate { font-size: 22px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.p-rate small { font-size: 13px; margin-left: 1px; }
+.p-sub { grid-column: 1 / -1; font-size: 13px; color: var(--muted); font-weight: 700; }
+
+.progress-row .jotai-bar { grid-column: 1 / -1; }
+
+.is-total .p-name { font-size: 18px; }
+.is-total .p-rate { font-size: 30px; }
+.is-total .jotai-bar { height: 18px; }
+.is-total { padding-bottom: 12px; border-bottom: 2px dashed var(--soft); }
+
+.jotai-bar {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border: 2px solid var(--edge);
+  border-radius: 8px;
+  background: var(--soft);
+}
+
+.jotai-bar span { flex-basis: 0; background: var(--jc); }
+.jotai-bar span + span { border-left: 2px solid var(--edge); }
+
+.jotai-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.jotai-legend li { display: flex; align-items: center; gap: 5px; }
+.jotai-legend .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--jc); border: 1.5px solid var(--edge); }
+
+.switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.switch input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--ok); }
+
+/* ---------- 鑑別写真の開発希望：控えめな札 ---------- */
+.photo-vote {
+  margin-top: 24px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 2.5px solid var(--edge);
+  border-top: 5px solid var(--t-keisan);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-size: 16px;
+}
+
+.photo-vote p { margin: 0; }
+.photo-vote .photo-vote-btn { min-height: 56px; margin-top: 12px; font-size: 17px; }
+.photo-vote .photo-vote-thanks { margin-top: 12px; color: var(--ink); font-weight: 700; }
+
+/* ---------- 選んで解く ---------- */
+.pick-title { margin: 22px 0 10px; font-size: 16px; font-weight: 800; }
+.pick-help { margin: 8px 0 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--muted);
+  border-color: var(--soft);
+  box-shadow: none;
+}
+
+.chip-sub { font-size: 13px; font-weight: 700; }
+.chip-sub:empty { display: none; }
+
+/* 選んでいるものは、分野・状態の色で塗る */
+.chip[aria-pressed="true"] {
+  color: var(--ink);
+  border-color: var(--edge);
+  box-shadow: 3px 3px 0 var(--edge);
+}
+
+.chip[data-bunya][aria-pressed="true"] { background: var(--tape); color: #FFFFFF; }
+.chip[data-bunya="器具・材料"][aria-pressed="true"] { color: #15191F; }
+.chip[data-jotai][aria-pressed="true"] { background: var(--jc); color: #FFFFFF; }
+.chip[data-jotai="未回答"][aria-pressed="true"],
+.chip[data-jotai="うろ覚え"][aria-pressed="true"] { color: #15191F; }
+.chip[aria-pressed="true"]:not([data-bunya]):not([data-jotai]) { background: var(--main); color: var(--on-main); }
+
+.pick-go { margin-top: 28px; }
+
+/* ---------- 答えたあとの状態表示 ---------- */
+.verdict-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+.q-jotai {
+  margin: 0;
+  padding: 2px 12px;
+  border: 2px solid var(--edge);
+  border-radius: 999px;
+  background: var(--jc);
+  color: #15191F;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.q-jotai[data-jotai="苦手"],
+.q-jotai[data-jotai="完璧"] { color: #FFFFFF; }
+
+/* ---------- 問題の図・写真 ---------- */
+.zu {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: -8px 0 20px;
+  border: 2px solid var(--soft);
+  border-radius: var(--radius);
+  background: #FFFFFF;
+}
+
+/* ---------- ホーム下のリンク ---------- */
+.foot-links { display: flex; justify-content: center; gap: 8px; margin-top: 28px; }
+.foot-links .link-btn { margin: 0; }
+
+/* ---------- 応援パック ---------- */
+.oen-lead { margin: 0 0 14px; }
+
+.oen-benefits { margin: 0 0 16px; padding: 0; list-style: none; display: grid; gap: 8px; }
+
+.oen-benefits li {
+  padding: 10px 14px 10px 40px;
+  position: relative;
+  background: var(--surface);
+  border: 2px solid var(--edge);
+  border-radius: var(--radius);
+  font-weight: 700;
+}
+
+.oen-benefits li::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 2px solid var(--edge);
+}
+
+.oen-price { margin: 0 0 14px; font-size: 20px; font-weight: 900; }
+a.btn { text-decoration: none; }
+.oen-help { margin: 12px 0 18px; font-size: 14px; color: var(--muted); }
+
+.oen-form { display: grid; gap: 10px; }
+.oen-form label { font-size: 15px; font-weight: 800; }
+
+.oen-form input {
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 2.5px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.oen-msg { min-height: 1.7em; margin: 10px 0 0; color: var(--ng); font-weight: 700; }
+.oen-thanks { font-size: 22px; font-weight: 900; margin: 0 0 14px; }
+
+/* ---------- 作り方の一言・誤りの報告 ---------- */
+.about { margin: 28px 0 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.report-link { justify-self: center; padding: 6px 8px; font-size: 14px; color: var(--muted); }

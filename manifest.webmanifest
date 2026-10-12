@@ -1,0 +1,16 @@
+{
+  "name": "電工2種試験対策",
+  "short_name": "電工2種",
+  "description": "第二種電気工事士・筆記試験の4択練習。スマホで5分ずつ。",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EEF1F5",
+  "theme_color": "#FFD23F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

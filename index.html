@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="現役の電気工事士が作った、第二種電気工事士・筆記試験の4択練習。スマホで5分ずつ解けます。">
+  <meta name="theme-color" content="#FFD23F">
+  <title>電工2種試験対策</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app">
+
+    <!-- ホーム画面 -->
+    <section id="screen-home" class="screen">
+      <header class="home-head">
+        <p class="maker">電気屋が作った</p>
+        <h1 class="title">電工2種<br>試験対策</h1>
+      </header>
+
+      <div class="stats" aria-live="polite">
+        <div class="stat">
+          <span class="stat-num" id="stat-rate">—</span>
+          <span class="stat-label">これまでの正答率</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num" id="stat-done">0</span>
+          <span class="stat-label" id="stat-done-label">解いた問題</span>
+        </div>
+      </div>
+
+
+      <div class="menu">
+        <button class="btn btn-main" id="btn-random">ランダム10問</button>
+        <button class="btn" id="btn-bunya">分野・状態を選んで解く</button>
+        <button class="btn" id="btn-review">間違えた問題を復習<span class="badge" id="review-count">0</span></button>
+      </div>
+
+      <section class="progress" aria-label="分野ごとの達成度">
+        <h2 class="progress-title">分野ごとの完璧率</h2>
+        <ul class="progress-list" id="progress-list"></ul>
+        <ul class="jotai-legend" id="jotai-legend"></ul>
+      </section>
+
+      <aside class="photo-vote" aria-label="鑑別写真の開発希望">
+        <p>写真で見分ける問題（鑑別）は開発中です。欲しい人は押してください。</p>
+        <button class="btn photo-vote-btn" type="button">欲しい！</button>
+        <p class="photo-vote-thanks" role="status" hidden>ありがとうございます。数が集まったら作ります。</p>
+      </aside>
+
+      <label class="switch">
+        <input type="checkbox" id="opt-skip-kanpeki" checked>
+        <span>完璧になった問題は、ランダム10問に出さない</span>
+      </label>
+
+      <p class="about">現役の電気工事士が、AIの力も借りて作っています。<span id="about-report" hidden>間違いに気づいたら、問題画面から報告してください。</span></p>
+
+      <div class="foot-links">
+        <button class="link-btn" id="btn-oen" hidden>応援パック</button>
+        <button class="link-btn" id="btn-reset">成績をリセット</button>
+      </div>
+    </section>
+
+    <!-- 分野を選ぶ画面 -->
+    <section id="screen-bunya" class="screen" hidden>
+      <div class="bar">
+        <button class="back" data-go="home" aria-label="ホームへ戻る">‹ ホーム</button>
+      </div>
+      <h2 class="screen-title">選んで解く</h2>
+
+      <h3 class="pick-title">分野</h3>
+      <div class="chips" id="pick-bunya"></div>
+
+      <h3 class="pick-title">問題の状態</h3>
+      <div class="chips" id="pick-jotai"></div>
+      <p class="pick-help">完璧：3回続けて正解した問題。苦手：2回以上間違えて、まだ完璧になっていない問題。</p>
+
+      <h3 class="pick-title">問題数</h3>
+      <div class="chips chips-count" id="pick-count"></div>
+
+      <div class="pick-go">
+        <button class="btn btn-main" id="btn-pick-start">解く</button>
+      </div>
+    </section>
+
+
+    <!-- 応援パック画面 -->
+    <section id="screen-oen" class="screen" hidden>
+      <div class="bar">
+        <button class="back" data-go="home" aria-label="ホームへ戻る">‹ ホーム</button>
+      </div>
+      <h2 class="screen-title" id="oen-name">応援パック</h2>
+
+      <div id="oen-sell">
+        <p class="oen-lead">このアプリは無料で使えます。気に入ってもらえたら、応援パックで開発を支えてください。</p>
+        <ul class="oen-benefits" id="oen-benefits"></ul>
+        <p class="oen-price" id="oen-price"></p>
+        <a class="btn btn-main" id="oen-buy" target="_blank" rel="noopener">購入ページを開く</a>
+        <p class="oen-help">購入すると解除コードが届きます。下に入力してください。</p>
+
+        <form class="oen-form" id="oen-form">
+          <label for="oen-code">解除コード</label>
+          <input id="oen-code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="DENKO-XXXX-XXXX">
+          <button class="btn" type="submit">解除する</button>
+        </form>
+        <p class="oen-msg" id="oen-msg" role="status"></p>
+      </div>
+
+      <div id="oen-done" hidden>
+        <p class="oen-thanks">応援ありがとうございます。</p>
+        <ul class="oen-benefits" id="oen-benefits-done"></ul>
+      </div>
+
+      <aside class="photo-vote" aria-label="鑑別写真の開発希望">
+        <p>写真で見分ける問題（鑑別）は開発中です。欲しい人は押してください。</p>
+        <button class="btn photo-vote-btn" type="button">欲しい！</button>
+        <p class="photo-vote-thanks" role="status" hidden>ありがとうございます。数が集まったら作ります。</p>
+      </aside>
+    </section>
+
+    <!-- 問題画面 -->
+    <section id="screen-quiz" class="screen" hidden>
+      <div class="bar">
+        <button class="back" data-go="home" aria-label="やめてホームへ戻る">‹ やめる</button>
+        <span class="count" id="q-count">1 / 10問</span>
+      </div>
+      <ol class="meter" id="q-meter" aria-hidden="true"></ol>
+      <p class="tag" id="q-bunya">計算</p>
+      <p class="question" id="q-text"></p>
+      <img class="zu" id="q-zu" alt="" hidden>
+      <div class="choices" id="q-choices"></div>
+
+      <div class="answer" id="q-answer" hidden>
+        <div class="verdict-row">
+          <p class="verdict" id="q-verdict"></p>
+          <p class="q-jotai" id="q-jotai"></p>
+        </div>
+        <div class="note">
+          <h3>解説</h3>
+          <p id="q-kaisetsu"></p>
+        </div>
+        <div class="note note-genba">
+          <h3>現場ではこう考える</h3>
+          <p id="q-genba"></p>
+        </div>
+        <button class="btn btn-main" id="btn-next">次の問題へ</button>
+        <a class="report-link" id="q-report" target="_blank" rel="noopener" hidden>この問題の誤りを報告</a>
+      </div>
+    </section>
+
+    <!-- 結果画面 -->
+    <section id="screen-result" class="screen" hidden>
+      <h2 class="screen-title">結果</h2>
+      <p class="result-rate"><span id="r-rate">0</span><small>%</small></p>
+      <p class="result-sub" id="r-sub"></p>
+      <ol class="meter meter-result" id="r-meter" aria-hidden="true"></ol>
+      <table class="result-table">
+        <thead><tr><th>分野</th><th>正解</th></tr></thead>
+        <tbody id="r-table"></tbody>
+      </table>
+      <div class="menu">
+        <button class="btn btn-main" id="btn-retry-wrong">間違えた問題だけもう一度</button>
+        <button class="btn" data-go="home">ホームへ</button>
+      </div>
+
+      <aside class="osusume" id="osusume" hidden>
+        <h3 class="osusume-title"><span id="osusume-title"></span><span class="pr">広告</span></h3>
+        <ul class="osusume-list" id="osusume-list"></ul>
+      </aside>
+    </section>
+
+  </main>
+
+  <script src="questions/keisan.js"></script>
+  <script src="questions/hourei.js"></script>
+  <script src="questions/kizai.js"></script>
+  <script src="questions/sekou.js"></script>
+  <script src="questions/oen.js"></script>
+  <script src="oen.js"></script>
+  <script src="site.js"></script>
+  <script src="osusume.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
