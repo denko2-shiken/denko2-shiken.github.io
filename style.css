@@ -533,6 +533,7 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 .photo-vote p { margin: 0; }
 .photo-vote .photo-vote-btn { min-height: 56px; margin-top: 12px; font-size: 17px; }
 .photo-vote .photo-vote-thanks { margin-top: 12px; color: var(--ink); font-weight: 700; }
+.photo-vote .photo-vote-progress { margin-top: 12px; color: var(--muted); font-size: 14px; line-height: 1.6; }
 
 /* ---------- 選んで解く ---------- */
 .pick-title { margin: 22px 0 10px; font-size: 16px; font-weight: 800; }

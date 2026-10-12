@@ -3,6 +3,8 @@
 
 const STORE_KEY = "denko2-renshu-v1";
 const RANDOM_COUNT = 10;
+// 解いた問題が全体のこの割合以上になると投票できる。0.8 にすると80%
+const VOTE_UNLOCK_RATE = 0.5;
 const MARKS = ["ア", "イ", "ウ", "エ"];
 
 // ---------- アクセス解析（任意） ----------
@@ -47,9 +49,23 @@ function loadPhotoVote() {
 }
 let photoVoted = loadPhotoVote();
 
+function photoVoteProgress() {
+  const free = ALL.filter(q => !q.pack);
+  const seen = new Set(store.seen);
+  const required = Math.ceil(free.length * VOTE_UNLOCK_RATE);
+  const done = free.filter(q => seen.has(q.id)).length;
+  return { required, remaining: Math.max(0, required - done) };
+}
+
 function renderPhotoVote() {
+  const { required, remaining } = photoVoteProgress();
   document.querySelectorAll(".photo-vote").forEach(box => {
-    box.querySelector(".photo-vote-btn").hidden = photoVoted;
+    const button = box.querySelector(".photo-vote-btn");
+    button.hidden = photoVoted || remaining > 0;
+    button.disabled = photoVoted || remaining > 0;
+    const progress = box.querySelector(".photo-vote-progress");
+    progress.hidden = photoVoted || remaining === 0;
+    progress.textContent = `全体の${VOTE_UNLOCK_RATE * 100}%（${required}問）を解くと「欲しい！」を押せます。あと${remaining}問`;
     box.querySelector(".photo-vote-thanks").hidden = !photoVoted;
   });
 }
@@ -61,6 +77,7 @@ function votePhoto() {
     renderPhotoVote();
     return;
   }
+  if (photoVoteProgress().remaining > 0) return;
   photoVoted = true;
   try { localStorage.setItem(VOTE_KEY, "1"); } catch (e) {
     // 保存できなくても、この画面を開いている間は投票済みとして扱う。
@@ -82,7 +99,6 @@ window.addEventListener("storage", e => {
     renderPhotoVote();
   }
 });
-renderPhotoVote();
 
 // 問題の状態（ステータス）の決まり
 const KANPEKI_STREAK = 3; // この回数だけ続けて正解すると「完璧」
@@ -194,6 +210,7 @@ function setTextWithKakunin(el, text) {
 
 // ---------- ホーム ----------
 function renderHome() {
+  renderPhotoVote();
   $("stat-rate").textContent = store.answers ? percent(store.corrects, store.answers) + "%" : "—";
   $("stat-done").textContent = store.seen.length;
   $("stat-done-label").textContent = `解いた問題／${ALL.length}問`;
@@ -511,6 +528,7 @@ function fillList(el, items) {
 }
 
 function renderOen() {
+  renderPhotoVote();
   const o = window.OEN || {};
   $("oen-name").textContent = o.name || "応援パック";
   $("oen-sell").hidden = unlocked;
