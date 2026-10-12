@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://denko2-shiken.github.io/sitemap.xml

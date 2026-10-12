@@ -658,4 +658,8 @@ a.btn { text-decoration: none; }
 
 /* ---------- 作り方の一言・誤りの報告 ---------- */
 .about { margin: 28px 0 0; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.app-about { margin-top: 24px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+.app-about h2 { margin: 0 0 8px; font-size: 15px; }
+.app-about p { margin: 8px 0 0; }
+.app-about ul { margin: 8px 0; padding-left: 1.5em; }
 .report-link { justify-self: center; padding: 6px 8px; font-size: 14px; color: var(--muted); }
