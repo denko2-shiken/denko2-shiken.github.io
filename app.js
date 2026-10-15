@@ -608,7 +608,18 @@ document.querySelectorAll("[data-go]").forEach(b => {
   b.addEventListener("click", () => show(b.dataset.go));
 });
 
-show("home");
+// 動画の固定コメントからの直リンク（例：?bunya=keisan）。その分野から10問をすぐ出す
+const LINK_BUNYA = { keisan: "計算", hourei: "法令", kizai: "器具・材料", sekou: "施工方法" };
+const linkBunya = LINK_BUNYA[new URLSearchParams(location.search).get("bunya")];
+if (linkBunya) {
+  history.replaceState(null, "", location.pathname); // 再読み込みで同じ出題をくり返さない
+  const inBunya = ALL.filter(q => q.bunya === linkBunya);
+  const notYet = inBunya.filter(q => jotaiOf(q.id) !== "完璧");
+  startQuiz(shuffle(store.skipKanpeki && notYet.length ? notYet : inBunya).slice(0, RANDOM_COUNT));
+  setTimeout(() => countEvent("直リンク-" + linkBunya), 3000); // 計測の読み込みを待つ
+} else {
+  show("home");
+}
 
 // 公開先（https）で開いたときだけ、オフライン用の仕組みを有効にする
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
