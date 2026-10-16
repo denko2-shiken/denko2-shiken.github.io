@@ -1,6 +1,6 @@
 // オフラインでも使えるようにするための仕組み（サービスワーカー）
 // ファイルを変えて公開したら、VERSION の数字を1つ上げる（古い保存分が入れ替わる）
-const VERSION = "v10";
+const VERSION = "v11";
 const CACHE = "denko2-renshu-" + VERSION;
 const FILES = [
   "./",

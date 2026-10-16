@@ -694,3 +694,132 @@ a.btn { text-decoration: none; }
 .app-about p { margin: 8px 0 0; }
 .app-about ul { margin: 8px 0; padding-left: 1.5em; }
 .report-link { justify-self: center; padding: 6px 8px; font-size: 14px; color: var(--muted); }
+
+/* ---------- 模擬試験 ---------- */
+.mogi-rules { margin: 0 0 18px; padding: 0; list-style: none; display: grid; gap: 8px; }
+
+.mogi-rules li {
+  padding: 10px 14px 10px 40px;
+  position: relative;
+  background: var(--surface);
+  border: 2px solid var(--edge);
+  border-radius: var(--radius);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.mogi-rules li::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 17px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: 2px solid var(--edge);
+}
+
+.mogi-haibun { margin-bottom: 22px; }
+
+/* 残り時間：黄色い札。残り10分で赤に変える */
+.mogi-timer {
+  padding: 2px 10px;
+  border: 2.5px solid var(--edge);
+  border-radius: 8px;
+  background: var(--yellow);
+  color: var(--on-yellow);
+  font-size: 17px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.mogi-timer.is-low { background: var(--ng); color: #FFFFFF; }
+
+/* 問題の番号：答えた問題は塗りつぶし、今の問題は太枠 */
+.mogi-nums {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  margin: 6px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.mogi-nums button {
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  border: 2px solid var(--soft);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.mogi-nums button.done { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.mogi-nums button.now { border-color: var(--edge); box-shadow: inset 0 0 0 2px var(--yellow); color: var(--ink); }
+.mogi-nums button.done.now { color: var(--bg); }
+
+/* 選んだ答え：正解は見せず、黄色で塗るだけ */
+.choice[aria-pressed="true"] { background: var(--yellow); color: var(--on-yellow); }
+.choice[aria-pressed="true"] .mark { background: var(--on-yellow); color: var(--yellow); border-color: var(--on-yellow); }
+
+.mogi-move { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+.mogi-finish { margin-top: 14px; }
+
+/* 結果：合格ラインの札 */
+.mogi-line {
+  display: inline-block;
+  margin: 10px 0 0;
+  padding: 4px 16px;
+  border: 2.5px solid var(--edge);
+  border-radius: 999px;
+  box-shadow: 3px 3px 0 var(--edge);
+  font-size: 18px;
+  font-weight: 900;
+  color: #FFFFFF;
+}
+
+.mogi-line.ok { background: var(--ok); }
+.mogi-line.ng { background: var(--ng); }
+
+.mogi-wrong-title { margin: 32px 0 12px; font-size: 18px; font-weight: 900; }
+.mogi-wrong { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; }
+
+.mogi-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 2.5px solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.mogi-card p { margin: 0; }
+.mogi-card .zu { margin: 0; }
+.mogi-card .note { background: var(--bg); }
+.mogi-card-head { display: flex; align-items: center; gap: 10px; }
+.mogi-card-head .tag { margin: 0; }
+.mogi-card-no { font-weight: 900; font-variant-numeric: tabular-nums; }
+.mogi-card-q { font-size: 18px; font-weight: 800; line-height: 1.6; }
+
+.mogi-ans {
+  display: grid;
+  grid-template-columns: 6.5em 1fr;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mogi-ans b { font-size: 13px; padding-top: 2px; }
+.mogi-ans.ng { background: var(--ng-bg); }
+.mogi-ans.ng b { color: var(--ng); }
+.mogi-ans.ok { background: var(--ok-bg); }
+.mogi-ans.ok b { color: var(--ok); }

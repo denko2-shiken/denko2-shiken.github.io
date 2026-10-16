@@ -60,6 +60,7 @@
 
       <div class="menu">
         <button class="btn btn-main" id="btn-random">ランダム10問</button>
+        <button class="btn" id="btn-mogi">模擬試験（50問・120分）</button>
         <button class="btn" id="btn-bunya">分野・状態を選んで解く</button>
         <button class="btn" id="btn-review">間違えた問題を復習<span class="badge" id="review-count">0</span></button>
       </div>
@@ -124,6 +125,66 @@
       </div>
     </section>
 
+    <!-- 模擬試験：始める前の説明 -->
+    <section id="screen-mogi" class="screen" hidden>
+      <div class="bar">
+        <button class="back" data-go="home" aria-label="ホームへ戻る">‹ ホーム</button>
+      </div>
+      <h2 class="screen-title">模擬試験</h2>
+      <ul class="mogi-rules">
+        <li>本番と同じ<b>50問</b>、制限時間<b>120分</b></li>
+        <li>答え合わせは最後にまとめて。途中で正解は出ません</li>
+        <li><b>60点（30問正解）</b>以上で合格ライン</li>
+        <li>時間切れになると、そこまでの答えで自動で採点します</li>
+      </ul>
+      <table class="result-table mogi-haibun">
+        <thead><tr><th>分野</th><th>出題数</th></tr></thead>
+        <tbody id="mogi-haibun"></tbody>
+      </table>
+      <div class="menu">
+        <button class="btn btn-main" id="btn-mogi-start">開始する</button>
+        <button class="btn" id="btn-mogi-restart" hidden>最初からやり直す</button>
+      </div>
+      <p class="pick-help">途中でホームに戻っても、つづきから解けます（時間は進みます）。</p>
+    </section>
+
+    <!-- 模擬試験：問題 -->
+    <section id="screen-mogi-q" class="screen" hidden>
+      <div class="bar">
+        <button class="back" id="btn-mogi-pause" aria-label="中断してホームへ戻る">‹ 中断</button>
+        <span class="mogi-timer" id="mq-timer" role="timer">残り 120:00</span>
+        <span class="count" id="mq-count">1 / 50問</span>
+      </div>
+      <ol class="mogi-nums" id="mq-nums" aria-label="問題の番号（押すとその問題へ）"></ol>
+      <p class="tag" id="mq-bunya">計算</p>
+      <p class="question" id="mq-text"></p>
+      <img class="zu" id="mq-zu" alt="" hidden>
+      <div class="choices" id="mq-choices"></div>
+      <div class="mogi-move">
+        <button class="btn" id="btn-mogi-prev">‹ 前へ</button>
+        <button class="btn" id="btn-mogi-next">次へ ›</button>
+      </div>
+      <button class="btn btn-main mogi-finish" id="btn-mogi-finish">採点する</button>
+    </section>
+
+    <!-- 模擬試験：結果 -->
+    <section id="screen-mogi-r" class="screen" hidden>
+      <h2 class="screen-title">模擬試験の結果</h2>
+      <p class="result-rate"><span id="mr-score">0</span><small>点</small></p>
+      <p class="mogi-line" id="mr-line"></p>
+      <p class="result-sub" id="mr-sub"></p>
+      <ol class="meter meter-result" id="mr-meter" aria-hidden="true"></ol>
+      <table class="result-table">
+        <thead><tr><th>分野</th><th>正解</th></tr></thead>
+        <tbody id="mr-table"></tbody>
+      </table>
+      <div class="menu">
+        <button class="btn btn-main" id="btn-mogi-retry-wrong">間違えた問題を解き直す</button>
+        <button class="btn" data-go="home">ホームへ</button>
+      </div>
+      <h3 class="mogi-wrong-title" id="mr-wrong-title">間違えた問題</h3>
+      <ol class="mogi-wrong" id="mr-wrong"></ol>
+    </section>
 
     <!-- 応援パック画面 -->
     <section id="screen-oen" class="screen" hidden>

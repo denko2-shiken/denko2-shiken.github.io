@@ -11,7 +11,8 @@ const MARKS = ["ア", "イ", "ウ", "エ"];
 // 設定したサービスだけ公開先で読み込む。ローカルのfile://では何もしない。
 const ANALYTICS_SITE = window.SITE || {};
 const ANALYTICS_WEB = location.protocol === "http:" || location.protocol === "https:";
-const SCREEN_TITLES = { home: "ホーム", bunya: "選んで解く", quiz: "問題", result: "結果", oen: "応援パック" };
+const SCREEN_TITLES = { home: "ホーム", bunya: "選んで解く", quiz: "問題", result: "結果", oen: "応援パック",
+  mogi: "模擬試験", "mogi-q": "模擬試験の問題", "mogi-r": "模擬試験の結果" };
 
 if (ANALYTICS_WEB) {
   if (ANALYTICS_SITE.goatcounter) {
@@ -197,6 +198,9 @@ function show(name) {
   if (name === "home") renderHome();
   if (name === "bunya") renderPick();
   if (name === "oen") renderOen();
+  if (name === "mogi") renderMogiStart();
+  clearInterval(mogiTimer); // 時計は模擬試験の問題画面にいる間だけ動かす
+  if (name === "mogi-q") mogiTimer = setInterval(tickMogi, 1000);
   countScreen(name);
 }
 
@@ -227,6 +231,8 @@ function renderHome() {
   $("btn-review").disabled = n === 0;
   $("opt-skip-kanpeki").checked = store.skipKanpeki;
   $("btn-oen").hidden = !(window.OEN && window.OEN.enabled);
+  const m = loadMogi();
+  $("btn-mogi").textContent = m ? `模擬試験のつづき（残り${Math.ceil(mogiLeft(m) / 60000)}分）` : "模擬試験（50問・120分）";
   $("about-report").hidden = !reportUrl("");
 
   // 分野ごとに、状態の割合を1本の帯で見せる（完璧率を大きく）
@@ -394,6 +400,18 @@ function renderQuestion() {
   });
 }
 
+// 1問の結果を成績に入れる（保存は呼び出し側で saveStore する）
+function recordAnswer(q, correct) {
+  store.answers++;
+  if (correct) store.corrects++;
+  if (!store.seen.includes(q.id)) store.seen.push(q.id);
+  if (correct) store.wrong = store.wrong.filter(id => id !== q.id);
+  else if (!store.wrong.includes(q.id)) store.wrong.push(q.id);
+  const r = store.q[q.id] || (store.q[q.id] = { c: 0, w: 0, s: 0 });
+  if (correct) { r.c++; r.s++; } else { r.w++; r.s = 0; }
+  return r;
+}
+
 function answer(chosen) {
   const q = quiz.list[quiz.index];
   const correct = chosen === q.seikai;
@@ -406,14 +424,7 @@ function answer(chosen) {
     else b.classList.add("dim");
   });
 
-  // 成績を保存
-  store.answers++;
-  if (correct) store.corrects++;
-  if (!store.seen.includes(q.id)) store.seen.push(q.id);
-  if (correct) store.wrong = store.wrong.filter(id => id !== q.id);
-  else if (!store.wrong.includes(q.id)) store.wrong.push(q.id);
-  const r = store.q[q.id] || (store.q[q.id] = { c: 0, w: 0, s: 0 });
-  if (correct) { r.c++; r.s++; } else { r.w++; r.s = 0; }
+  const r = recordAnswer(q, correct);
   saveStore();
 
   quiz.results.push(correct);
@@ -572,6 +583,256 @@ $("oen-form").addEventListener("submit", async e => {
   }
 });
 
+// ---------- 模擬試験（50問・120分・最後にまとめて採点） ----------
+const MOGI_KEY = "denko2-mogi-v1"; // 途中の答案（成績とは別に保存）
+const MOGI_MINUTES = 120;
+const MOGI_PASS = 30; // 30問正解（60点）で合格ライン
+// 分野ごとの出題数（合計50問）。本番は一般問題30問（計算10・器具材料8・施工と検査9・法令3が目安）＋配線図20問。
+// 配線図の問題がないときは、配線図で問われる器具・施工の分を中心に4分野へ振り分ける。
+const MOGI_HAIBUN = { "計算": 12, "器具・材料": 15, "施工方法": 18, "法令": 5 };
+const MOGI_HAIBUN_HAISEN = { "計算": 10, "器具・材料": 8, "施工方法": 9, "法令": 3, "配線図": 20 };
+const MOGI_TOTAL = 50;
+
+let mogi = null;      // { ids, order: [[選択肢の並び]], picks: [選んだ元の番号 or null], index, deadline, started }
+let mogiTimer = null;
+let mogiResult = null; // 直前の採点結果（解き直し用）
+
+function mogiHaibun() {
+  return ALL.some(q => q.bunya === "配線図") ? MOGI_HAIBUN_HAISEN : MOGI_HAIBUN;
+}
+
+function loadMogi() {
+  if (mogi) return mogi;
+  try {
+    const m = JSON.parse(localStorage.getItem(MOGI_KEY));
+    // 問題を消したなどで、答案の問題がそろわないときは捨てる
+    if (m && Array.isArray(m.ids) && m.ids.every(id => byId.has(id))) mogi = m;
+  } catch (e) {}
+  return mogi;
+}
+
+function saveMogi() {
+  try {
+    if (mogi) localStorage.setItem(MOGI_KEY, JSON.stringify(mogi));
+    else localStorage.removeItem(MOGI_KEY);
+  } catch (e) {
+    // 保存できなくても、開いている間は続けられる
+  }
+}
+
+function mogiLeft(m) {
+  return Math.max(0, m.deadline - Date.now());
+}
+
+function renderMogiStart() {
+  const haibun = mogiHaibun();
+  const body = $("mogi-haibun");
+  body.textContent = "";
+  Object.keys(haibun).forEach(bunya => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><span class="tag"></span></td><td></td>';
+    const tag = tr.querySelector(".tag");
+    tag.textContent = bunya;
+    tag.dataset.bunya = bunya;
+    tr.lastChild.textContent = `${haibun[bunya]}問`;
+    body.appendChild(tr);
+  });
+  const m = loadMogi();
+  $("btn-mogi-start").textContent = m ? `つづきから（残り${Math.ceil(mogiLeft(m) / 60000)}分）` : "開始する";
+  $("btn-mogi-restart").hidden = !m;
+}
+
+function newMogi() {
+  // 分野ごとに決まった数を選ぶ。足りない分はほかの分野から補う
+  const haibun = mogiHaibun();
+  let picked = [];
+  Object.keys(haibun).forEach(bunya => {
+    picked = picked.concat(shuffle(ALL.filter(q => q.bunya === bunya)).slice(0, haibun[bunya]));
+  });
+  const used = new Set(picked.map(q => q.id));
+  picked = picked.concat(shuffle(ALL.filter(q => !used.has(q.id))).slice(0, MOGI_TOTAL - picked.length));
+  // 本番と同じく、分野ごとにまとめて並べる
+  const rank = Object.keys(haibun);
+  picked.sort((a, b) => rank.indexOf(a.bunya) - rank.indexOf(b.bunya));
+  const now = Date.now();
+  mogi = {
+    ids: picked.map(q => q.id),
+    order: picked.map(() => shuffle([0, 1, 2, 3])),
+    picks: picked.map(() => null),
+    index: 0,
+    started: now,
+    deadline: now + MOGI_MINUTES * 60000
+  };
+  saveMogi();
+}
+
+function openMogi() {
+  if (!loadMogi()) newMogi();
+  if (mogiLeft(mogi) === 0) {
+    finishMogi(); // 中断中に時間切れになっていた
+    return;
+  }
+  show("mogi-q");
+  renderMogiQuestion();
+  tickMogi();
+}
+
+function tickMogi() {
+  if (!mogi) return;
+  const left = mogiLeft(mogi);
+  const sec = Math.ceil(left / 1000);
+  const t = $("mq-timer");
+  t.textContent = `残り ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+  t.classList.toggle("is-low", left <= 10 * 60000);
+  if (left === 0) {
+    alert("時間切れです。ここまでの答えで採点します。");
+    finishMogi();
+  }
+}
+
+function renderMogiQuestion() {
+  const i = mogi.index;
+  const q = byId.get(mogi.ids[i]);
+  const total = mogi.ids.length;
+  $("mq-count").textContent = `${i + 1} / ${total}問`;
+
+  const nums = $("mq-nums");
+  nums.textContent = "";
+  mogi.ids.forEach((id, n) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.textContent = n + 1;
+    b.className = (mogi.picks[n] !== null ? "done" : "") + (n === i ? " now" : "");
+    b.setAttribute("aria-label", `${n + 1}問目` + (mogi.picks[n] !== null ? "（回答済み）" : ""));
+    b.addEventListener("click", () => moveMogi(n));
+    li.appendChild(b);
+    nums.appendChild(li);
+  });
+
+  $("mq-bunya").textContent = q.bunya;
+  $("mq-bunya").dataset.bunya = q.bunya;
+  $("mq-text").textContent = q.mondai;
+  const zu = $("mq-zu");
+  if (q.zu) {
+    zu.src = q.zu;
+    zu.alt = q.zuAlt || "問題の図";
+    zu.hidden = false;
+  } else {
+    zu.hidden = true;
+    zu.removeAttribute("src");
+  }
+
+  const box = $("mq-choices");
+  box.textContent = "";
+  mogi.order[i].forEach((orig, pos) => {
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.dataset.orig = orig;
+    b.setAttribute("aria-pressed", mogi.picks[i] === orig ? "true" : "false");
+    b.innerHTML = '<span class="mark"></span><span class="label"></span>';
+    b.querySelector(".mark").textContent = MARKS[pos];
+    b.querySelector(".label").textContent = q.sentakushi[orig];
+    b.addEventListener("click", () => {
+      mogi.picks[i] = orig;
+      saveMogi();
+      renderMogiQuestion();
+    });
+    box.appendChild(b);
+  });
+
+  $("btn-mogi-prev").disabled = i === 0;
+  $("btn-mogi-next").disabled = i === total - 1;
+  const rest = mogi.picks.filter(p => p === null).length;
+  $("btn-mogi-finish").textContent = rest ? `採点する（未回答 ${rest}問）` : "採点する";
+}
+
+function moveMogi(n) {
+  mogi.index = Math.max(0, Math.min(mogi.ids.length - 1, n));
+  saveMogi();
+  renderMogiQuestion();
+  window.scrollTo(0, 0);
+}
+
+function finishMogi() {
+  clearInterval(mogiTimer);
+  const m = mogi;
+  const list = m.ids.map(id => byId.get(id));
+  const results = list.map((q, i) => m.picks[i] === q.seikai);
+  // 答えた問題だけ、ふだんの成績（苦手・完璧など）にも入れる。未回答は記録しない
+  list.forEach((q, i) => { if (m.picks[i] !== null) recordAnswer(q, results[i]); });
+  saveStore();
+  mogiResult = { list, picks: m.picks.slice(), results, timeUp: Date.now() >= m.deadline,
+    used: Math.min(Date.now(), m.deadline) - m.started };
+  mogi = null;
+  saveMogi();
+  renderMogiResult();
+  show("mogi-r");
+}
+
+function renderMogiResult() {
+  const { list, picks, results, used, timeUp } = mogiResult;
+  const total = list.length;
+  const ok = results.filter(Boolean).length;
+  $("mr-score").textContent = Math.round((ok / total) * 100);
+  const line = $("mr-line");
+  const pass = ok >= MOGI_PASS;
+  line.className = "mogi-line " + (pass ? "ok" : "ng");
+  line.textContent = pass ? "合格ライン" : `合格ラインまで あと${MOGI_PASS - ok}問`;
+  const min = Math.ceil(used / 60000);
+  const blank = picks.filter(p => p === null).length;
+  $("mr-sub").textContent = `${total}問中 ${ok}問 正解・` + (timeUp ? "時間切れ" : `かかった時間 ${min}分`) +
+    (blank ? `・未回答 ${blank}問` : "");
+  renderMeter($("mr-meter"), total, results, -1);
+
+  const body = $("mr-table");
+  body.textContent = "";
+  BUNYA_LIST.forEach(bunya => {
+    const idx = list.map((q, i) => (q.bunya === bunya ? i : -1)).filter(i => i >= 0);
+    if (!idx.length) return;
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><span class="tag"></span></td><td></td>';
+    const tag = tr.querySelector(".tag");
+    tag.textContent = bunya;
+    tag.dataset.bunya = bunya;
+    tr.lastChild.textContent = `${idx.filter(i => results[i]).length} / ${idx.length}`;
+    body.appendChild(tr);
+  });
+
+  // 間違えた問題の一覧（あなたの答え・正解・解説）
+  const box = $("mr-wrong");
+  box.textContent = "";
+  list.forEach((q, i) => {
+    if (results[i]) return;
+    const li = document.createElement("li");
+    li.className = "mogi-card";
+    li.innerHTML = '<p class="mogi-card-head"><span class="mogi-card-no"></span><span class="tag"></span></p>' +
+      '<p class="mogi-card-q"></p><img class="zu" alt="" hidden>' +
+      '<p class="mogi-ans ng"><b>あなたの答え</b><span></span></p>' +
+      '<p class="mogi-ans ok"><b>正解</b><span></span></p>' +
+      '<div class="note"><h3>解説</h3><p class="mogi-kaisetsu"></p></div>';
+    li.querySelector(".mogi-card-no").textContent = `${i + 1}問目`;
+    const tag = li.querySelector(".tag");
+    tag.textContent = q.bunya;
+    tag.dataset.bunya = q.bunya;
+    li.querySelector(".mogi-card-q").textContent = q.mondai;
+    if (q.zu) {
+      const zu = li.querySelector(".zu");
+      zu.src = q.zu;
+      zu.alt = q.zuAlt || "問題の図";
+      zu.hidden = false;
+    }
+    li.querySelector(".mogi-ans.ng span").textContent = picks[i] === null ? "未回答" : q.sentakushi[picks[i]];
+    li.querySelector(".mogi-ans.ok span").textContent = q.sentakushi[q.seikai];
+    setTextWithKakunin(li.querySelector(".mogi-kaisetsu"), q.kaisetsu);
+    box.appendChild(li);
+  });
+  const wrongCount = total - ok;
+  $("mr-wrong-title").hidden = wrongCount === 0;
+  const retry = $("btn-mogi-retry-wrong");
+  retry.disabled = wrongCount === 0;
+  retry.textContent = wrongCount ? `間違えた問題を解き直す（${wrongCount}問）` : "全問正解です";
+}
+
 // ---------- ボタンの動き ----------
 $("btn-random").addEventListener("click", () => {
   let pool = ALL;
@@ -582,6 +843,25 @@ $("btn-random").addEventListener("click", () => {
   startQuiz(shuffle(pool).slice(0, RANDOM_COUNT));
 });
 $("btn-bunya").addEventListener("click", () => show("bunya"));
+$("btn-mogi").addEventListener("click", () => show("mogi"));
+$("btn-mogi-start").addEventListener("click", openMogi);
+$("btn-mogi-restart").addEventListener("click", () => {
+  if (!confirm("途中の答えを消して、新しい50問で始めます。よろしいですか？")) return;
+  mogi = null;
+  saveMogi();
+  openMogi();
+});
+$("btn-mogi-pause").addEventListener("click", () => show("home"));
+$("btn-mogi-prev").addEventListener("click", () => moveMogi(mogi.index - 1));
+$("btn-mogi-next").addEventListener("click", () => moveMogi(mogi.index + 1));
+$("btn-mogi-finish").addEventListener("click", () => {
+  const rest = mogi.picks.filter(p => p === null).length;
+  if (rest && !confirm(`まだ答えていない問題が${rest}問あります（不正解になります）。採点しますか？`)) return;
+  finishMogi();
+});
+$("btn-mogi-retry-wrong").addEventListener("click", () => {
+  startQuiz(shuffle(mogiResult.list.filter((q, i) => !mogiResult.results[i])));
+});
 $("btn-oen").addEventListener("click", () => show("oen"));
 $("btn-pick-start").addEventListener("click", () => {
   const p = pickState();
