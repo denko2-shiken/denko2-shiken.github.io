@@ -95,6 +95,21 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 }
 
 /* ---------- ホーム ---------- */
+.source-question {
+  margin-bottom: 24px;
+  padding: 12px;
+  border: 2.5px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.source-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.source-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 16px; }
+.source-head .btn { flex: none; width: 56px; min-height: 56px; padding: 8px; }
+.source-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.source-options .btn { min-height: 56px; padding: 8px; font-size: 16px; }
+
 .home-head {
   margin: 20px 0 28px;
   padding: 18px 20px 20px;
@@ -466,6 +481,10 @@ button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-c
 
 .o-name { display: block; font-weight: 800; }
 .o-note { display: block; font-size: 14px; color: var(--muted); }
+
+.home-osusume { margin-top: 24px; }
+.home-osusume .osusume-title { flex-wrap: wrap; }
+.home-osusume a { min-height: 56px; overflow-wrap: anywhere; }
 
 /* ---------- 問題の状態（未回答・苦手・うろ覚え・完璧） ---------- */
 [data-jotai="未回答"] { --jc: var(--soft); }

@@ -46,6 +46,19 @@
         <h1 class="title">電工2種<br>試験対策</h1>
       </header>
 
+      <aside id="source-question" class="source-question" aria-labelledby="source-title" hidden>
+        <div class="source-head">
+          <h2 id="source-title">このアプリをどこで知りましたか？</h2>
+          <button id="source-close" class="btn" type="button" aria-label="質問を閉じる">×</button>
+        </div>
+        <div class="source-options">
+          <button class="btn" type="button" data-source="tiktok">TikTok</button>
+          <button class="btn" type="button" data-source="youtube">YouTube</button>
+          <button class="btn" type="button" data-source="search">検索</button>
+          <button class="btn" type="button" data-source="other">その他</button>
+        </div>
+      </aside>
+
       <div class="stats" aria-live="polite">
         <div class="stat">
           <span class="stat-num" id="stat-rate">—</span>
@@ -64,6 +77,15 @@
         <button class="btn" id="btn-bunya">分野・状態を選んで解く</button>
         <button class="btn" id="btn-review">間違えた問題を復習<span class="badge" id="review-count">0</span></button>
       </div>
+
+      <aside id="home-osusume" class="osusume home-osusume" aria-labelledby="home-osusume-title" hidden>
+        <h2 class="osusume-title" id="home-osusume-title"><span class="pr">広告</span>筆記のあとは、すぐ技能の練習</h2>
+        <ul class="osusume-list"><li>
+          <a id="home-osusume-link" rel="sponsored noopener" target="_blank">
+            <span class="o-name"></span><span class="o-note"></span>
+          </a>
+        </li></ul>
+      </aside>
 
       <section class="progress" aria-label="分野ごとの達成度">
         <h2 class="progress-title">分野ごとの完璧率</h2>

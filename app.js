@@ -35,12 +35,12 @@ function countScreen(name) {
   countEvent(SCREEN_TITLES[name]);
 }
 
-function countEvent(title) {
+function countEvent(title, path) {
   if (!ANALYTICS_WEB || !ANALYTICS_SITE.goatcounter || !title ||
       !window.goatcounter || typeof window.goatcounter.count !== "function") return;
   // 画面名・リンク名だけをイベントとして送る（問題のid・回答・成績は送らない）。
   try {
-    window.goatcounter.count({ path: "/" + title, title: title, event: true });
+    window.goatcounter.count({ path: path || "/" + title, title: title, event: true });
   } catch (e) {
     // 計測に失敗しても、練習はそのまま続けられる。
   }
@@ -48,6 +48,42 @@ function countEvent(title) {
 
 document.querySelectorAll("[data-video]").forEach(link => {
   link.addEventListener("click", () => countEvent("動画リンク（" + link.dataset.video + "）"));
+});
+
+// ---------- 初回の流入元（成績とは別に保存） ----------
+const SOURCE_KEY = "denko2-src-v1";
+function loadSource() {
+  try { return localStorage.getItem(SOURCE_KEY) !== null; } catch (e) { return false; }
+}
+let sourceAnswered = loadSource();
+
+function renderSource() {
+  document.getElementById("source-question").hidden = sourceAnswered;
+}
+
+function finishSource(source, title) {
+  if (sourceAnswered || loadSource()) {
+    sourceAnswered = true;
+    renderSource();
+    return;
+  }
+  sourceAnswered = true;
+  try { localStorage.setItem(SOURCE_KEY, source); } catch (e) {
+    // 保存できなくても、開いている間は再表示しない。
+  }
+  renderSource();
+  if (title) countEvent("知った場所-" + title, "/src/" + source);
+}
+
+document.querySelectorAll("[data-source]").forEach(button => {
+  button.addEventListener("click", () => finishSource(button.dataset.source, button.textContent));
+});
+document.getElementById("source-close").addEventListener("click", () => finishSource("closed"));
+window.addEventListener("storage", e => {
+  if (e.key === SOURCE_KEY && e.newValue !== null) {
+    sourceAnswered = true;
+    renderSource();
+  }
 });
 
 // ---------- 鑑別写真の開発希望（成績とは別に保存） ----------
@@ -221,6 +257,8 @@ function setTextWithKakunin(el, text) {
 
 // ---------- ホーム ----------
 function renderHome() {
+  renderSource();
+  renderHomeOsusume();
   renderPhotoVote();
   $("stat-rate").textContent = store.answers ? percent(store.corrects, store.answers) + "%" : "—";
   $("stat-done").textContent = store.seen.length;
@@ -505,12 +543,14 @@ function renderOsusume() {
   $("osusume-title").textContent = o.title;
   const list = $("osusume-list");
   list.textContent = "";
-  o.items.forEach(item => {
+  o.items.forEach((item, index) => {
     const li = document.createElement("li");
     const a = document.createElement("a");
     a.href = item.url;
     a.target = "_blank";
     a.rel = "sponsored noopener";
+    a.addEventListener("click", () => countEvent("おすすめ-" + Array.from(item.name).slice(0, 15).join(""),
+      "/click/osusume-" + (index + 1)));
     a.innerHTML = '<span class="o-name"></span><span class="o-note"></span>';
     a.querySelector(".o-name").textContent = item.name;
     a.querySelector(".o-note").textContent = item.note || "";
@@ -519,6 +559,20 @@ function renderOsusume() {
   });
   box.hidden = false;
 }
+
+function renderHomeOsusume() {
+  const o = window.OSUSUME;
+  const box = $("home-osusume");
+  const item = o && Number.isInteger(o.homeIndex) && o.items && o.items[o.homeIndex];
+  box.hidden = unlocked || !o || !o.show || !item;
+  if (box.hidden) return;
+  const link = $("home-osusume-link");
+  link.href = item.url;
+  link.querySelector(".o-name").textContent = item.name;
+  link.querySelector(".o-note").textContent = item.note || "";
+}
+
+$("home-osusume-link").addEventListener("click", () => countEvent("おすすめ-ホーム", "/click/home-osusume"));
 
 // 誤りの報告先（site.js の reportUrl）。{id} は問題の id に置き換える
 function reportUrl(id) {
