@@ -17,9 +17,9 @@ window.OSUSUME = {
       url: "https://hb.afl.rakuten.co.jp/ichiba/586ba182.c247b078.586ba183.fa3ed3f1/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fbook%2F18419346%2F&link_type=picttext&ut=eyJwYWdlIjoiaXRlbSIsInR5cGUiOiJwaWN0dGV4dCIsInNpemUiOiIyNDB4MjQwIiwibmFtIjoxLCJuYW1wIjoicmlnaHQiLCJjb20iOjEsImNvbXAiOiJkb3duIiwicHJpY2UiOjEsImJvciI6MSwiY29sIjoxLCJiYnRuIjoxLCJwcm9kIjowLCJhbXAiOmZhbHNlfQ%3D%3D"
     },
     {
-      name: "第二種電気工事士 技能試験セット（テキスト・ホーザン工具セット付き）",
+      name: "電光石火の第2種電気工事士 技能試験セット",
       note: "筆記に受かったら、すぐ技能試験の練習が必要になる",
-      url: "https://hb.afl.rakuten.co.jp/ichiba/586ba02d.0fabd353.586ba02e.1d518c23/?pc=https%3A%2F%2Fitem.rakuten.co.jp%2Fdenchiya-bekkan%2Fdkg2s2kbkdk18%2F&link_type=picttext&ut=eyJwYWdlIjoiaXRlbSIsInR5cGUiOiJwaWN0dGV4dCIsInNpemUiOiIyNDB4MjQwIiwibmFtIjoxLCJuYW1wIjoicmlnaHQiLCJjb20iOjEsImNvbXAiOiJkb3duIiwicHJpY2UiOjEsImJvciI6MSwiY29sIjoxLCJiYnRuIjoxLCJwcm9kIjowLCJhbXAiOmZhbHNlfQ%3D%3D"
+      url: "https://px.a8.net/svt/ejp?a8mat=4BEET7+7U7KLU+2T9K+BWVTE"
     }
   ]
 };
