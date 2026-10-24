@@ -58,6 +58,16 @@
           <button class="btn" type="button" data-source="other">その他</button>
         </div>
       </aside>
+      <section class="shikenbi" aria-label="試験日までの残り日数">
+        <p class="shikenbi-main" id="shikenbi-main" hidden></p>
+        <p class="shikenbi-sub" id="shikenbi-sub" hidden></p>
+        <details class="shikenbi-set" id="shikenbi-set">
+          <summary id="shikenbi-summary">試験日を入れて、残り日数を表示する</summary>
+          <label class="shikenbi-label" for="shikenbi-date">筆記試験（CBTなら受験日）の日付</label>
+          <input type="date" id="shikenbi-date">
+          <button class="link-btn" type="button" id="btn-shikenbi-clear">試験日を消す</button>
+        </details>
+      </section>
 
       <div class="stats" aria-live="polite">
         <div class="stat">
@@ -73,6 +83,7 @@
 
       <div class="menu">
         <button class="btn btn-main" id="btn-random">ランダム10問</button>
+        <button class="btn btn-2line" id="btn-jakuten">弱点を優先して10問<small>間違えた・苦手 → うろ覚え → 未回答の順に出る</small></button>
         <button class="btn" id="btn-mogi">模擬試験（50問・120分）</button>
         <button class="btn" id="btn-bunya">分野・状態を選んで解く</button>
         <button class="btn" id="btn-review">間違えた問題を復習<span class="badge" id="review-count">0</span></button>
@@ -91,6 +102,7 @@
         <h2 class="progress-title">分野ごとの完璧率</h2>
         <ul class="progress-list" id="progress-list"></ul>
         <ul class="jotai-legend" id="jotai-legend"></ul>
+        <button class="btn kiroku-btn" id="btn-kiroku">学習の記録（日ごと・分野ごと）</button>
       </section>
 
       <aside class="photo-vote" aria-label="鑑別写真の開発希望">
@@ -145,6 +157,44 @@
       <div class="pick-go">
         <button class="btn btn-main" id="btn-pick-start">解く</button>
       </div>
+    </section>
+
+    <!-- 学習の記録 -->
+    <section id="screen-kiroku" class="screen" hidden>
+      <div class="bar">
+        <button class="back" data-go="home" aria-label="ホームへ戻る">‹ ホーム</button>
+      </div>
+      <h2 class="screen-title">学習の記録</h2>
+      <div class="stats stats-3">
+        <div class="stat">
+          <span class="stat-num"><span id="kiroku-renzoku">0</span><small>日</small></span>
+          <span class="stat-label">続けて勉強</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num"><span id="kiroku-week">0</span><small>問</small></span>
+          <span class="stat-label">直近7日に解いた</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num" id="kiroku-week-rate">—</span>
+          <span class="stat-label">直近7日の正答率</span>
+        </div>
+      </div>
+
+      <h3 class="pick-title">直近14日に解いた問題数</h3>
+      <p class="kiroku-today" id="kiroku-today"></p>
+      <ol class="day-chart" id="kiroku-days" aria-label="直近14日に解いた問題数（左が古い日、右が今日）"></ol>
+
+      <h3 class="pick-title">分野ごとの正答率</h3>
+      <table class="result-table kiroku-table">
+        <thead><tr><th>分野</th><th>回答数</th><th>全期間</th><th>直近7日</th></tr></thead>
+        <tbody id="kiroku-bunya"></tbody>
+      </table>
+
+      <h3 class="pick-title">模擬試験の点数（新しい順）</h3>
+      <p class="pick-help" id="kiroku-mogi-none">まだ受けていません。ホームの「模擬試験」から受けられます。</p>
+      <ol class="mogi-history" id="kiroku-mogi"></ol>
+
+      <p class="pick-help kiroku-note">記録はこの端末の中だけに保存され、外部には送られません。日ごとの記録は直近90日分、模擬試験は新しい10回分を残します。</p>
     </section>
 
     <!-- 模擬試験：始める前の説明 -->

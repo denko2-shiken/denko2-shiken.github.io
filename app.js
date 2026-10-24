@@ -12,7 +12,7 @@ const MARKS = ["ア", "イ", "ウ", "エ"];
 const ANALYTICS_SITE = window.SITE || {};
 const ANALYTICS_WEB = location.protocol === "http:" || location.protocol === "https:";
 const SCREEN_TITLES = { home: "ホーム", bunya: "選んで解く", quiz: "問題", result: "結果", oen: "応援パック",
-  mogi: "模擬試験", "mogi-q": "模擬試験の問題", "mogi-r": "模擬試験の結果" };
+  mogi: "模擬試験", "mogi-q": "模擬試験の問題", "mogi-r": "模擬試験の結果", kiroku: "学習の記録" };
 
 if (ANALYTICS_WEB) {
   if (ANALYTICS_SITE.goatcounter) {
@@ -191,6 +191,59 @@ function saveStore() {
   } catch (e) {
     // 保存できない環境（プライベートモード等）でも、アプリはそのまま使える
   }
+  saveKiroku(); // 答えを記録したら、日ごとの記録も一緒に保存する
+}
+
+// ---------- 学習の記録（日ごと・分野ごと。成績とは別のキーに保存） ----------
+// 形：{ days: { "2026-10-24": { "計算": [回答数, 正解数], ... } }, mogi: [{ d: 日付, ok: 正解数, n: 問題数 }] }
+const KIROKU_KEY = "denko2-kiroku-v1";
+const KIROKU_DAYS = 90;     // これより古い日の記録は消す
+const KIROKU_MOGI_MAX = 10; // 模擬試験は新しい10回分を残す
+
+function emptyKiroku() {
+  return { days: {}, mogi: [] };
+}
+
+// 端末の時計で「その日」を表す文字（例：2026-10-24）
+function dayKey(time) {
+  const d = new Date(time);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function daysAgo(n) {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0); // 夏時間などで日付がずれないよう、昼を基準にする
+  d.setDate(d.getDate() - n);
+  return d;
+}
+
+function loadKiroku() {
+  try {
+    const data = JSON.parse(localStorage.getItem(KIROKU_KEY));
+    if (!data || typeof data.days !== "object" || !Array.isArray(data.mogi)) return emptyKiroku();
+    const oldest = dayKey(daysAgo(KIROKU_DAYS));
+    Object.keys(data.days).forEach(d => { if (d < oldest) delete data.days[d]; });
+    return data;
+  } catch (e) {
+    return emptyKiroku();
+  }
+}
+
+function saveKiroku() {
+  try {
+    localStorage.setItem(KIROKU_KEY, JSON.stringify(kiroku));
+  } catch (e) {
+    // 保存できなくても、開いている間は記録を見られる
+  }
+}
+
+let kiroku = loadKiroku();
+
+function logAnswer(q, correct) {
+  const day = kiroku.days[dayKey(Date.now())] || (kiroku.days[dayKey(Date.now())] = {});
+  const b = day[q.bunya] || (day[q.bunya] = [0, 0]);
+  b[0]++;
+  if (correct) b[1]++;
 }
 
 let store = loadStore();
@@ -235,6 +288,7 @@ function show(name) {
   if (name === "bunya") renderPick();
   if (name === "oen") renderOen();
   if (name === "mogi") renderMogiStart();
+  if (name === "kiroku") renderKiroku();
   clearInterval(mogiTimer); // 時計は模擬試験の問題画面にいる間だけ動かす
   if (name === "mogi-q") mogiTimer = setInterval(tickMogi, 1000);
   countScreen(name);
@@ -260,6 +314,7 @@ function renderHome() {
   renderSource();
   renderHomeOsusume();
   renderPhotoVote();
+  renderShikenbi();
   $("stat-rate").textContent = store.answers ? percent(store.corrects, store.answers) + "%" : "—";
   $("stat-done").textContent = store.seen.length;
   $("stat-done-label").textContent = `解いた問題／${ALL.length}問`;
@@ -308,6 +363,172 @@ function renderHome() {
     legend.appendChild(li);
   });
 }
+
+// ---------- 学習の記録の画面 ----------
+// ある日の合計 [回答数, 正解数]（bunya を渡すとその分野だけ）
+function daySum(key, bunya) {
+  const day = kiroku.days[key] || {};
+  return Object.keys(day).filter(b => !bunya || b === bunya)
+    .reduce((t, b) => [t[0] + day[b][0], t[1] + day[b][1]], [0, 0]);
+}
+
+function recentSum(n, bunya) {
+  let t = [0, 0];
+  for (let i = 0; i < n; i++) {
+    const d = daySum(dayKey(daysAgo(i)), bunya);
+    t = [t[0] + d[0], t[1] + d[1]];
+  }
+  return t;
+}
+
+// 続けて勉強した日数。今日まだ解いていなくても、昨日まで続いていれば数える
+function renzokuDays() {
+  let i = daySum(dayKey(daysAgo(0)))[0] ? 0 : 1;
+  let n = 0;
+  while (daySum(dayKey(daysAgo(i)))[0]) { n++; i++; }
+  return n;
+}
+
+function renderKiroku() {
+  const week = recentSum(7);
+  $("kiroku-renzoku").textContent = renzokuDays();
+  $("kiroku-week").textContent = week[0];
+  $("kiroku-week-rate").textContent = week[0] ? percent(week[1], week[0]) + "%" : "—";
+
+  // 直近14日の棒グラフ（左が古い日、右が今日）
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = daysAgo(i);
+    days.push({ d, sum: daySum(dayKey(d)) });
+  }
+  const max = Math.max(1, ...days.map(x => x.sum[0]));
+  const chart = $("kiroku-days");
+  chart.textContent = "";
+  days.forEach((x, i) => {
+    const li = document.createElement("li");
+    const label = `${x.d.getMonth() + 1}月${x.d.getDate()}日 ${x.sum[0]}問` +
+      (x.sum[0] ? `・正答率${percent(x.sum[1], x.sum[0])}%` : "");
+    li.title = label;
+    li.setAttribute("aria-label", label);
+    li.innerHTML = '<span class="day-bar"><span></span></span><span class="day-label"></span>';
+    li.querySelector(".day-bar span").style.height = (x.sum[0] / max) * 100 + "%";
+    li.querySelector(".day-label").textContent = i === 13 ? "今日" : x.d.getDate();
+    if (i === 13) li.className = "is-today";
+    chart.appendChild(li);
+  });
+  const today = days[13].sum;
+  $("kiroku-today").textContent = today[0]
+    ? `今日 ${today[0]}問・正答率 ${percent(today[1], today[0])}%` : "今日はまだ解いていません";
+
+  // 分野ごと：全期間は問題ごとの記録から、直近7日は日ごとの記録から
+  const body = $("kiroku-bunya");
+  body.textContent = "";
+  BUNYA_LIST.forEach(bunya => {
+    let c = 0, n = 0;
+    ALL.forEach(q => {
+      const r = store.q[q.id];
+      if (q.bunya === bunya && r) { c += r.c; n += r.c + r.w; }
+    });
+    const w = recentSum(7, bunya);
+    const tr = document.createElement("tr");
+    tr.innerHTML = '<td><span class="tag"></span></td><td></td><td></td><td></td>';
+    const tag = tr.querySelector(".tag");
+    tag.textContent = bunya;
+    tag.dataset.bunya = bunya;
+    tr.children[1].textContent = `${n}回`;
+    tr.children[2].textContent = n ? percent(c, n) + "%" : "—";
+    tr.children[3].textContent = w[0] ? percent(w[1], w[0]) + "%" : "—";
+    body.appendChild(tr);
+  });
+
+  // 模擬試験の点数（新しい順）
+  const mogiList = $("kiroku-mogi");
+  mogiList.textContent = "";
+  kiroku.mogi.slice().reverse().forEach(m => {
+    const score = Math.round((m.ok / m.n) * 100);
+    const pass = m.ok >= MOGI_PASS;
+    const li = document.createElement("li");
+    li.innerHTML = '<span class="mh-date"></span><span class="mh-bar"><span></span></span>' +
+      '<span class="mh-score"></span><span class="mh-line"></span>';
+    const [, mm, dd] = m.d.split("-");
+    li.querySelector(".mh-date").textContent = `${Number(mm)}/${Number(dd)}`;
+    li.querySelector(".mh-bar span").style.width = score + "%";
+    li.querySelector(".mh-score").textContent = `${score}点`;
+    const line = li.querySelector(".mh-line");
+    line.textContent = pass ? "合格ライン" : "あと" + (MOGI_PASS - m.ok) + "問";
+    line.classList.add(pass ? "ok" : "ng");
+    mogiList.appendChild(li);
+  });
+  $("kiroku-mogi-none").hidden = kiroku.mogi.length > 0;
+}
+
+// ---------- 試験日までの残り日数（成績とは別に保存） ----------
+const SHIKENBI_KEY = "denko2-shikenbi-v1"; // 値は "2026-10-25" の形
+
+function loadShikenbi() {
+  try {
+    const v = localStorage.getItem(SHIKENBI_KEY);
+    return /^\d{4}-\d{2}-\d{2}$/.test(v || "") ? v : "";
+  } catch (e) {
+    return "";
+  }
+}
+let shikenbi = loadShikenbi();
+
+function saveShikenbi(v) {
+  shikenbi = v;
+  try {
+    if (v) localStorage.setItem(SHIKENBI_KEY, v);
+    else localStorage.removeItem(SHIKENBI_KEY);
+  } catch (e) {
+    // 保存できなくても、開いている間は表示する
+  }
+}
+
+// 今日から試験日まで何日か（今日が試験日なら0、過ぎていればマイナス）
+function shikenbiNokori(v) {
+  const [y, m, d] = v.split("-").map(Number);
+  const exam = new Date(y, m - 1, d, 12);
+  return Math.round((exam - daysAgo(0)) / 86400000);
+}
+
+function renderShikenbi() {
+  const main = $("shikenbi-main");
+  const sub = $("shikenbi-sub");
+  $("shikenbi-date").value = shikenbi;
+  $("btn-shikenbi-clear").hidden = !shikenbi;
+  $("shikenbi-summary").textContent = shikenbi ? "試験日を変える" : "試験日を入れて、残り日数を表示する";
+  main.hidden = sub.hidden = !shikenbi;
+  if (!shikenbi) return;
+  const n = shikenbiNokori(shikenbi);
+  const [, m, d] = shikenbi.split("-").map(Number);
+  main.className = "shikenbi-main" + (n >= 0 && n <= 7 ? " is-near" : "");
+  if (n > 0) {
+    main.innerHTML = `試験（${m}月${d}日）まで あと<b></b>日`;
+    main.querySelector("b").textContent = n;
+    // 完璧になっていない問題を、試験の前日までに一巡するには1日何問か
+    const rest = ALL.filter(q => jotaiOf(q.id) !== "完璧").length;
+    sub.textContent = rest
+      ? `完璧でない問題 ${rest}問 → 1日 ${Math.ceil(rest / n)}問で、前日までに一巡できます`
+      : "全問が完璧です。模擬試験で時間配分を確かめておきましょう";
+  } else if (n === 0) {
+    main.textContent = "今日が試験日です";
+    sub.textContent = "落ち着いて。見直しの時間も残しておきましょう";
+  } else {
+    main.textContent = `試験日（${m}月${d}日）を過ぎました`;
+    sub.textContent = "次の試験日が決まったら、入れ直してください";
+  }
+}
+
+$("shikenbi-date").addEventListener("change", e => {
+  saveShikenbi(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value) ? e.target.value : "");
+  if (shikenbi) $("shikenbi-set").open = false;
+  renderShikenbi();
+});
+$("btn-shikenbi-clear").addEventListener("click", () => {
+  saveShikenbi("");
+  renderShikenbi();
+});
 
 // ---------- 選んで解く（分野・状態・問題数） ----------
 function pickState() {
@@ -440,6 +661,7 @@ function renderQuestion() {
 
 // 1問の結果を成績に入れる（保存は呼び出し側で saveStore する）
 function recordAnswer(q, correct) {
+  logAnswer(q, correct);
   store.answers++;
   if (correct) store.corrects++;
   if (!store.seen.includes(q.id)) store.seen.push(q.id);
@@ -815,6 +1037,9 @@ function finishMogi() {
   // 答えた問題だけ、ふだんの成績（苦手・完璧など）にも入れる。未回答は記録しない
   list.forEach((q, i) => { if (m.picks[i] !== null) recordAnswer(q, results[i]); });
   saveStore();
+  kiroku.mogi = kiroku.mogi.concat({ d: dayKey(Date.now()), ok: results.filter(Boolean).length, n: list.length })
+    .slice(-KIROKU_MOGI_MAX);
+  saveKiroku();
   mogiResult = { list, picks: m.picks.slice(), results, timeUp: Date.now() >= m.deadline,
     used: Math.min(Date.now(), m.deadline) - m.started };
   mogi = null;
@@ -887,6 +1112,36 @@ function renderMogiResult() {
   retry.textContent = wrongCount ? `間違えた問題を解き直す（${wrongCount}問）` : "全問正解です";
 }
 
+// ---------- 弱点を優先して出す ----------
+// 前回まちがえた → 苦手 → うろ覚え → 未回答 の順に選ぶ（完璧は出さない）。
+// 同じ段の中では、正答率の低い分野の問題ほど先に出やすくする。
+function bunyaSeikairitsu(bunya) {
+  let c = 0, n = 0;
+  ALL.forEach(q => {
+    const r = store.q[q.id];
+    if (q.bunya === bunya && r) { c += r.c; n += r.c + r.w; }
+  });
+  return n ? c / n : 0.5; // まだ解いていない分野は真ん中あつかい
+}
+
+function jakutenList(count) {
+  const wrong = new Set(store.wrong);
+  const rate = {};
+  BUNYA_LIST.forEach(b => { rate[b] = bunyaSeikairitsu(b); });
+  const dan = q => {
+    const j = jotaiOf(q.id);
+    if (j === "完璧") return -1;
+    if (wrong.has(q.id)) return 0;
+    return ["苦手", "うろ覚え", "未回答"].indexOf(j) + 1;
+  };
+  const list = ALL.map(q => ({ q, d: dan(q), k: Math.random() + (1 - rate[q.bunya]) }))
+    .filter(x => x.d >= 0)
+    .sort((a, b) => a.d - b.d || b.k - a.k)
+    .map(x => x.q)
+    .slice(0, count);
+  return list.length ? shuffle(list) : shuffle(ALL).slice(0, count); // 全部完璧なら全問から
+}
+
 // ---------- ボタンの動き ----------
 $("btn-random").addEventListener("click", () => {
   let pool = ALL;
@@ -896,7 +1151,9 @@ $("btn-random").addEventListener("click", () => {
   }
   startQuiz(shuffle(pool).slice(0, RANDOM_COUNT));
 });
+$("btn-jakuten").addEventListener("click", () => startQuiz(jakutenList(RANDOM_COUNT)));
 $("btn-bunya").addEventListener("click", () => show("bunya"));
+$("btn-kiroku").addEventListener("click", () => show("kiroku"));
 $("btn-mogi").addEventListener("click", () => show("mogi"));
 $("btn-mogi-start").addEventListener("click", openMogi);
 $("btn-mogi-restart").addEventListener("click", () => {
@@ -932,8 +1189,9 @@ $("btn-retry-wrong").addEventListener("click", () => {
   startQuiz(shuffle(quiz.list.filter((q, i) => !quiz.results[i])));
 });
 $("btn-reset").addEventListener("click", () => {
-  if (confirm("これまでの成績と、問題ごとの状態（苦手・完璧など）の記録を消します。よろしいですか？")) {
+  if (confirm("これまでの成績・学習の記録と、問題ごとの状態（苦手・完璧など）の記録を消します。よろしいですか？")) {
     store = emptyStore();
+    kiroku = emptyKiroku();
     saveStore();
     renderHome();
   }
