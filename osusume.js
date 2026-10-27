@@ -13,8 +13,8 @@ window.OSUSUME = {
     },
     {
       name: "HOZAN DK-28 第2種電工試験 基本工具セット（楽天ROOM）",
-      note: "指定工具がひとそろい。ROOMの一覧から「DK-28」を開く",
-      url: "https://room.rakuten.co.jp/room_5f6dd6b437/items"
+      note: "指定工具がひとそろい（楽天ROOMの紹介ページ）",
+      url: "https://room.rakuten.co.jp/room_5f6dd6b437/1700396710377136"
     },
     {
       name: "みんなが欲しかった！第二種電気工事士 学科試験の過去問題集（2026年度版）",
